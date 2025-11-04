@@ -2,64 +2,20 @@
 http://localhost:3000/usuario/INS251030-00002 -->
 <template>
     <div class="p-4">
-    <h1>PrimeVue 4 en Nuxt 4</h1>
+    <!-- <h1>PrimeVue 4 en Nuxt 4</h1> -->
+
 
 
       <pre>{{infoCompleta}}</pre>
-
-            <div class="card">
-            <Timeline :value="pasosInstalacion" align="alternate" class="customized-timeline">
-                <template #content="slotProps">
-
-                    <Card class="mt-4">
-                        <template #title>
-                            {{ slotProps.item.status }}
-                        </template>
-                        <template #subtitle>
-                            {{ infoCompleta[0].fechaSolicitud }}
-                        </template>
-                        <template #content>
-
-                            <div style="background-color: red;" v-if="slotProps.item.status == 'Confirmacion cita' ">
-                                aquí va el template para confirmacion cita
-                            </div>
-
-
-                            
-
-
-                            <!-- <div v-if=" infoCompleta[0].status < listadoStatus[infoCompleta[0].status]"></div> -->
-
-                            <p>Direccion: {{ infoCompleta[0].direccion }}</p>
-                            <p>Ciudad: {{ infoCompleta[0].ciudad }}</p>
-                            <p>Estado: {{ infoCompleta[0].estado }}</p>
-                            <p>codigo postal: {{ infoCompleta[0].codigoPostal}}</p>
-                            <h3>Info Cliente</h3>
-                            <p>Nombre: {{ infoCompleta[0].usuario.nombre }}  {{ infoCompleta[0].usuario.apellidos}}</p>
-                            <p>Telefono: {{ infoCompleta[0].usuario.telefono }}</p>
-                            <p>Correo: {{ infoCompleta[0].usuario.correo }}</p>
-                            <Button label="Read more" variant="text" @click="showToast" />
-
-                            
-                        </template>
-                    </Card>
-                </template>
-            </Timeline>
-        </div>
-
-
-
-    
-
-
-        <!-- <div class="card">
-            <Timeline :value="events" align="alternate" class="customized-timeline">
-                <template #marker="slotProps">
+      
+      <div class="card">
+        <Timeline :value="pasosInstalacion" align="alternate" class="customized-timeline">
+          <template #marker="slotProps">
                     <span
                         class="flex w-8 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
                         :class="{
-                            'current-marker': slotProps.item.current,
-                            'completed-marker': slotProps.item.completed
+                            'current-marker': slotProps.item.idStatus == infoCompleta[0]?.status?.idStatus,
+                            'completed-marker': slotProps.item.idStatus <= (infoCompleta[0]?.status?.idStatus ?? 1)-1
                         }"
                         :style="{ backgroundColor: slotProps.item.color }">
                         <i :class="slotProps.item.icon"></i>
@@ -72,32 +28,42 @@ http://localhost:3000/usuario/INS251030-00002 -->
                             {{ slotProps.item.status }}
                         </template>
                         <template #subtitle>
-                            {{ slotProps.item.date }}
+                          {{ infoCompleta[0]?.['fecha'+slotProps.item.camelCase] }}
                         </template>
                         <template #content>
 
-                            <div style="background-color: red;" v-if="slotProps.item.status === 'Solicitud'">
-
-                                aquí va el template para solicitud
+                            <div style="background-color: red;" v-if="slotProps.item.status == 'Confirmacion de Cita' ">
+                                aquí va el template para confirmacion cita
                             </div>
 
 
-                            <img v-if="slotProps.item.image" :src="`https://primefaces.org/cdn/primevue/images/product/${slotProps.item.image}`" :alt="slotProps.item.name" width="200" class="shadow-sm" />
-                            <p>
-                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore sed consequuntur error repudiandae numquam deserunt quisquam repellat libero asperiores earum nam nobis, culpa ratione quam perferendis esse, cupiditate
-                                neque quas!
-                            </p>
-                            <Button label="Read more" variant="text" @click="showToast" />
+
+
+
+                              <div  v-if="infoCompleta[0]?.status?.idStatus && slotProps.item.idStatus <= infoCompleta[0].status.idStatus">
+
+                                <!-- Mosntrar en base al estado actual mientras sean ese paso o anteriores -->
+                                        <!-- menor o igual al idStatus del status de la instalacion -->
+                                        <!-- <div v-if="slotProps.item.idStatus <= infoCompleta[0]"></div> -->
+                                        <p>Direccion: {{ infoCompleta[0].direccion }}</p>
+                                        <p>Ciudad: {{ infoCompleta[0].ciudad }}</p>
+                                        <p>Estado: {{ infoCompleta[0].estado }}</p>
+                                        <p>codigo postal: {{ infoCompleta[0].codigoPostal}}</p>
+                                        <h3>Info Cliente</h3>
+                                        <p>Nombre: {{ infoCompleta[0].usuario?.nombre }}  {{ infoCompleta[0].usuario?.apellidos}}</p>
+                                        <p>Telefono: {{ infoCompleta[0].usuario?.telefono }}</p>
+                                        <p>Correo: {{ infoCompleta[0].usuario?.correo }}</p>
+                                        <!-- <Button label="Read more" variant="text" @click="showToast" /> -->
+                              </div>
+
 
                             
                         </template>
                     </Card>
                 </template>
             </Timeline>
-        </div> -->
-    
+        </div>
 
-    <Toast />
   </div>
 
 </template>
@@ -110,44 +76,43 @@ import TecnicoInstalador from './tecnicoInstalador.vue';
 import { ref } from "vue";
 import { item } from '@primeuix/themes/aura/breadcrumb';
 import { info } from 'console';
+import type { Status } from '~~/server/models/Status';
 
-// const events = ref([
-//     { status: 'Solicitud', date: '15/10/2020 10:30', icon: 'pi pi-shopping-cart', color: '#9C27B0', image: 'game-controller.jpg', current: false, completed: true },
-//     { status: 'En espera de cita', date: '15/10/2020 14:00', icon: 'pi pi-cog', color: '#673AB7', image: 'game-controller.jpg', current: true, completed: false },
-//     { status: 'Confirmacion cita', date: '15/10/2020 16:15', icon: 'pi pi-shopping-cart', color: '#FF9800', image: 'game-controller.jpg', current: false, completed: false },
-//     { status: 'Instalacion', date: '16/10/2020 10:00', icon: 'pi pi-check', color: '#607D8B', image: 'game-controller.jpg', current: false, completed: false },
-//     { status: 'Instalado', date: '16/10/2020 14:00', icon: 'pi pi-check', color: '#4CAF50', image: 'game-controller.jpg', current: false, completed: false },
-// ]);
-
+// Define a type for the enriched installation data
+type InstalacionCompleta = Omit<Instalacion, 'status'> & {
+  usuario?: Usuario;
+  status?: Status;
+  [key: string]: any; // Index signature for dynamic property access
+}
 
 const pasosInstalacion = ref([
-      { status: 'Solicitud', icon: 'pi pi-shopping-cart', color: '#9C27B0', image: 'game-controller.jpg', current: false, completed: true },
-      { status: 'En espera de cita', icon: 'pi pi-cog', color: '#673AB7', image: 'game-controller.jpg', current: true, completed: false },
-      { status: 'Confirmacion cita', icon: 'pi pi-shopping-cart', color: '#FF9800', image: 'game-controller.jpg', current: false, completed: false },
-      { status: 'Instalacion', icon: 'pi pi-check', color: '#607D8B', image: 'game-controller.jpg', current: false, completed: false },
-      { status: 'Instalado', icon: 'pi pi-check', color: '#4CAF50', image: 'game-controller.jpg', current: false, completed: false },
+      { idStatus: 1, status: 'Solicitud', icon: 'pi pi-shopping-cart', color: '#9C27B0', image: 'game-controller.jpg', current: false, completed: true, camelCase: 'Solicitud' },
+      { idStatus: 2, status: 'En espera de Cita', icon: 'pi pi-cog', color: '#673AB7', image: 'game-controller.jpg', current: true, completed: false, camelCase: 'EsperaCita' },
+      { idStatus: 3, status: 'Confirmacion de Cita', icon: 'pi pi-shopping-cart', color: '#FF9800', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'ConfirmacionCita'},
+      { idStatus: 4, status: 'Instalacion', icon: 'pi pi-check', color: '#607D8B', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'Instalacion' },
+      { idStatus: 5, status: 'Instalado', icon: 'pi pi-check', color: '#4CAF50', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'Instalado' },
 ])
 
-const listadoStatus = {'solicitud':1, 'esperaCita':2, 'confirmacionCita':3, 'instalacion':4, 'instalado':5};
-
+let listadoStatus: Status[]=[];
+await useFetch('/api/instalaciones/status').then(res => {
+  listadoStatus = res.data.value?.data ?? [];
+});
 
 
 const route = useRoute();
 let folioInstalacion = route.params.folio;
 
 
-let listadoUsuarios: Usuario[];
+let listadoUsuarios: Usuario[] = [];
 let listadoInstalaciones: Instalacion[]= [];
-let infoCompleta;
+let infoCompleta: InstalacionCompleta[] = [];
 
 
-let ejemplo = "test";
+
 
 
 await useFetch('/api/usuarios/usuarios').then(res => {
   listadoUsuarios = res.data.value?.data ?? [];
-
-
 });
 
 
@@ -160,7 +125,8 @@ await useFetch('/api/instalaciones/instalaciones').then(res => {
       if(item.folio == folioInstalacion){
         infoCompleta = [item].map(instalacion=>({
           ...instalacion,
-          usuario: listadoUsuarios.find(u => u.folio === instalacion.folio)
+          usuario: listadoUsuarios.find(u => u.folio === instalacion.folio),
+          status: listadoStatus.find(s => s.descripcion === instalacion.status)
         }))
       }
     })
@@ -169,13 +135,68 @@ await useFetch('/api/instalaciones/instalaciones').then(res => {
 
     console.log(infoCompleta);
 
-    // const events = ref(infoCompleta);
 
 
 
 
 </script>
 
-<style>
+<style lang="scss" scoped>
+body{
+  height: 3000px;
+}
 
+
+
+/* // Estilos para remarcar el estado actual y completados */
+::v-deep(.customized-timeline) {
+    /* // Remarcar la línea del timeline SOLO para eventos completados (hacia arriba desde el actual) */
+    .p-timeline-event:has(.completed-marker) {
+        .p-timeline-event-connector {
+            background-color: #4CAF50; 
+            width: 4px; 
+        }
+    }
+
+    /* // Efecto pulsante en el marcador actual (SOLO el icono, no la línea) */
+    .current-marker {
+        animation: pulse 2s infinite;
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+/* // Marcador un poco más grande */
+        transform: scale(1.1); 
+    }
+
+    /* // Los marcadores completados también tienen un estilo especial */
+    .completed-marker {
+        border: 3px solid #4CAF50;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
+}
+
+@media screen and (max-width: 960px) {
+    ::v-deep(.customized-timeline) {
+        .p-timeline-event:nth-child(even) {
+            flex-direction: row;
+
+            .p-timeline-event-content {
+                text-align: left;
+            }
+        }
+
+        .p-timeline-event-opposite {
+            flex: 0;
+        }
+    }
+}
 </style>
