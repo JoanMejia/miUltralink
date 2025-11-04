@@ -16,7 +16,8 @@ http://localhost:3000/usuario/INS251030-00002 -->
                         :class="{
                             'current-marker': slotProps.item.idStatus == infoCompleta[0]?.status?.idStatus,
                             'completed-marker': slotProps.item.idStatus <= (infoCompleta[0]?.status?.idStatus ?? 1)-1
-                        }"
+                        }",
+                        :id="'paso'+slotProps.item.idStatus"
                         :style="{ backgroundColor: slotProps.item.color }">
                         <i :class="slotProps.item.icon"></i>
                     </span>
@@ -77,6 +78,17 @@ import { ref } from "vue";
 import { item } from '@primeuix/themes/aura/breadcrumb';
 import { info } from 'console';
 import type { Status } from '~~/server/models/Status';
+
+
+import { onMounted, nextTick } from 'vue'
+
+onMounted(async () => {
+  await nextTick()
+  const anchor = document.querySelector('#paso'+infoCompleta[0]?.status?.idStatus)
+  if (anchor) {
+    anchor.scrollIntoView({ behavior: 'smooth' })
+  }
+})
 
 // Define a type for the enriched installation data
 type InstalacionCompleta = Omit<Instalacion, 'status'> & {
@@ -142,9 +154,6 @@ await useFetch('/api/instalaciones/instalaciones').then(res => {
 </script>
 
 <style lang="scss" scoped>
-body{
-  height: 3000px;
-}
 
 
 
@@ -200,3 +209,8 @@ body{
     }
 }
 </style>
+
+<style>
+body{
+  height: 3500px;
+}</style>
