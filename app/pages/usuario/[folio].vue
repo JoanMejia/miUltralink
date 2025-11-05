@@ -1,69 +1,60 @@
 <!-- ejemplo de URL para probar:
 http://localhost:3000/usuario/INS251030-00002 -->
 <template>
-    <div class="p-4">
-    <!-- <h1>PrimeVue 4 en Nuxt 4</h1> -->
+  <div class="p-4">
+
+
+    <!-- <pre>{{infoCompleta}}</pre> -->
+
+    <div class="card">
+      <Timeline :value="pasosInstalacion" align="alternate" class="customized-timeline">
+        <template #marker="slotProps">
+          <span class="flex w-8 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm" :class="{
+            'current-marker': slotProps.item.idStatus == (infoCompleta[0]?.status?.idStatus ?? 1) + 1,
+            'completed-marker': slotProps.item.idStatus <= (infoCompleta[0]?.status?.idStatus ?? 1)
+          }" :id="'paso' + slotProps.item.idStatus" :style="{ backgroundColor: slotProps.item.color }">
+            <i :class="slotProps.item.icon"></i>
+          </span>
+        </template>
+        <template #content="slotProps">
+
+          <Card class="mt-4">
+            <template #title>
+              {{ slotProps.item.status }}
+            </template>
+            <template #subtitle>
+              {{ infoCompleta[0]?.['fecha' + slotProps.item.camelCase] }}
+            </template>
+            <template #content>
+
+              <!-- <div style="background-color: red;" v-if="slotProps.item.status == 'Confirmacion de Cita' ">
+                      aquí va el template para confirmacion cita
+                    </div> -->
+              <div
+                v-if="infoCompleta[0]?.status?.idStatus && slotProps.item.idStatus <= infoCompleta[0].status.idStatus">
+
+                <!-- Mosntrar en base al estado actual mientras sean ese paso o anteriores -->
+                <!-- menor o igual al idStatus del status de la instalacion -->
+                <!-- <div v-if="slotProps.item.idStatus <= infoCompleta[0]"></div> -->
+                 <p><strong>FOLIO: {{ infoCompleta[0].folio }}</strong></p>
+                <p>Direccion: {{ infoCompleta[0].direccion }}</p>
+                <p>Ciudad: {{ infoCompleta[0].ciudad }}</p>
+                <p>Estado: {{ infoCompleta[0].estado }}</p>
+                <p>codigo postal: {{ infoCompleta[0].codigoPostal }}</p>
+                <h3>Info Cliente</h3>
+                <p>Nombre: {{ infoCompleta[0].usuario?.nombre }} {{ infoCompleta[0].usuario?.apellidos }}</p>
+                <p>Telefono: {{ infoCompleta[0].usuario?.telefono }}</p>
+                <p>Correo: {{ infoCompleta[0].usuario?.correo }}</p>
+                <!-- <Button label="Read more" variant="text" @click="showToast" /> -->
+              </div>
 
 
 
-      <!-- <pre>{{infoCompleta}}</pre> -->
-      
-      <div class="card">
-        <Timeline :value="pasosInstalacion" align="alternate" class="customized-timeline">
-          <template #marker="slotProps">
-                    <span
-                        class="flex w-8 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm"
-                        :class="{
-                            'current-marker': slotProps.item.idStatus == infoCompleta[0]?.status?.idStatus,
-                            'completed-marker': slotProps.item.idStatus <= (infoCompleta[0]?.status?.idStatus ?? 1)-1
-                        }",
-                        :id="'paso'+slotProps.item.idStatus"
-                        :style="{ backgroundColor: slotProps.item.color }">
-                        <i :class="slotProps.item.icon"></i>
-                    </span>
-                </template>
-                <template #content="slotProps">
-
-                    <Card class="mt-4">
-                        <template #title>
-                            {{ slotProps.item.status }}
-                        </template>
-                        <template #subtitle>
-                          {{ infoCompleta[0]?.['fecha'+slotProps.item.camelCase] }}
-                        </template>
-                        <template #content>
-
-                            <!-- <div style="background-color: red;" v-if="slotProps.item.status == 'Confirmacion de Cita' ">
-                                aquí va el template para confirmacion cita
-                            </div> -->
-
-
-
-
-
-                              <div  v-if="infoCompleta[0]?.status?.idStatus && slotProps.item.idStatus <= infoCompleta[0].status.idStatus">
-
-                                <!-- Mosntrar en base al estado actual mientras sean ese paso o anteriores -->
-                                        <!-- menor o igual al idStatus del status de la instalacion -->
-                                        <!-- <div v-if="slotProps.item.idStatus <= infoCompleta[0]"></div> -->
-                                        <p>Direccion: {{ infoCompleta[0].direccion }}</p>
-                                        <p>Ciudad: {{ infoCompleta[0].ciudad }}</p>
-                                        <p>Estado: {{ infoCompleta[0].estado }}</p>
-                                        <p>codigo postal: {{ infoCompleta[0].codigoPostal}}</p>
-                                        <h3>Info Cliente</h3>
-                                        <p>Nombre: {{ infoCompleta[0].usuario?.nombre }}  {{ infoCompleta[0].usuario?.apellidos}}</p>
-                                        <p>Telefono: {{ infoCompleta[0].usuario?.telefono }}</p>
-                                        <p>Correo: {{ infoCompleta[0].usuario?.correo }}</p>
-                                        <!-- <Button label="Read more" variant="text" @click="showToast" /> -->
-                              </div>
-
-
-                            
-                        </template>
-                    </Card>
-                </template>
-            </Timeline>
-        </div>
+            </template>
+          </Card>
+        </template>
+      </Timeline>
+    </div>
 
   </div>
 
@@ -109,7 +100,12 @@ const cargarDatos = async () => {
 
   const listadoStatus: Status[] = statusRes?.data ?? []
   const listadoUsuarios: Usuario[] = usuariosRes?.data ?? []
-  const listadoInstalaciones: Instalacion[] = instalacionesRes?.data ?? []
+  // const listadoInstalaciones: Instalacion[] = instalacionesRes?.data ?? [];
+
+  const listadoInstalaciones: Instalacion[] = (instalacionesRes?.data ?? []).map(inst => ({
+  ...inst,
+  fechaSolicitud: new Date(inst.fechaSolicitud)
+}))
 
   // Buscar la instalación específica y enriquecerla
   const instalacionEncontrada = listadoInstalaciones.find(item => item.folio == folioInstalacion)
@@ -131,9 +127,9 @@ onMounted(async () => {
   await nextTick()
 
   // Scroll al paso actual
-  const anchor = document.querySelector('#paso' + infoCompleta.value[0]?.status?.idStatus)
-  if (anchor) {
-    anchor.scrollIntoView({ behavior: 'smooth' })
+    const anchor = document.querySelector('#paso' + infoCompleta.value[0]?.status?.idStatus)
+    if (anchor) {
+      anchor.scrollIntoView({ behavior: 'smooth' })
   }
 })
 

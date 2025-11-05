@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
         calificacion: body.calificacion || '',
         descripcion: body.descripcion || '',
         direccion: body.direccion,
-        fechaInstalacion: body.fechaInstalacion || '',
+        fechaSolicitud: new Date,
         observaciones: body.observaciones || '',
         ciudad: body.ciudad,
         estado: body.estado,

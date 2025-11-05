@@ -6,7 +6,7 @@ export interface Instalacion {
   calificacion: string,
   descripcion: string,
   direccion:string,
-  fechaInstalacion: string,
+  fechaSolicitud: Date,
   observaciones: string,
   ciudad: string,
   estado: string,
