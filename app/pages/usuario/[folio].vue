@@ -6,7 +6,7 @@ http://localhost:3000/usuario/INS251030-00002 -->
 
 
 
-      <pre>{{infoCompleta}}</pre>
+      <!-- <pre>{{infoCompleta}}</pre> -->
       
       <div class="card">
         <Timeline :value="pasosInstalacion" align="alternate" class="customized-timeline">
@@ -33,9 +33,9 @@ http://localhost:3000/usuario/INS251030-00002 -->
                         </template>
                         <template #content>
 
-                            <div style="background-color: red;" v-if="slotProps.item.status == 'Confirmacion de Cita' ">
+                            <!-- <div style="background-color: red;" v-if="slotProps.item.status == 'Confirmacion de Cita' ">
                                 aquí va el template para confirmacion cita
-                            </div>
+                            </div> -->
 
 
 
@@ -72,23 +72,9 @@ http://localhost:3000/usuario/INS251030-00002 -->
 <script lang="ts" setup>
 import type { Usuario } from '../../../server/models/Usuario';
 import type { Instalacion} from '../../../server/models/Instalacion';
-import TecnicoInstalador from './tecnicoInstalador.vue';
-
-import { ref } from "vue";
-import { item } from '@primeuix/themes/aura/breadcrumb';
-import { info } from 'console';
 import type { Status } from '~~/server/models/Status';
-
-
+import { ref, watch } from "vue";
 import { onMounted, nextTick } from 'vue'
-
-onMounted(async () => {
-  await nextTick()
-  const anchor = document.querySelector('#paso'+infoCompleta[0]?.status?.idStatus)
-  if (anchor) {
-    anchor.scrollIntoView({ behavior: 'smooth' })
-  }
-})
 
 // Define a type for the enriched installation data
 type InstalacionCompleta = Omit<Instalacion, 'status'> & {
@@ -98,54 +84,69 @@ type InstalacionCompleta = Omit<Instalacion, 'status'> & {
 }
 
 const pasosInstalacion = ref([
-      { idStatus: 1, status: 'Solicitud', icon: 'pi pi-shopping-cart', color: '#9C27B0', image: 'game-controller.jpg', current: false, completed: true, camelCase: 'Solicitud' },
-      { idStatus: 2, status: 'En espera de Cita', icon: 'pi pi-cog', color: '#673AB7', image: 'game-controller.jpg', current: true, completed: false, camelCase: 'EsperaCita' },
-      { idStatus: 3, status: 'Confirmacion de Cita', icon: 'pi pi-shopping-cart', color: '#FF9800', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'ConfirmacionCita'},
-      { idStatus: 4, status: 'Instalacion', icon: 'pi pi-check', color: '#607D8B', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'Instalacion' },
-      { idStatus: 5, status: 'Instalado', icon: 'pi pi-check', color: '#4CAF50', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'Instalado' },
+      { idStatus: 1, status: 'Solicitud', icon: 'pi pi-plus-circle', color: '#9C27B0', image: 'game-controller.jpg', current: false, completed: true, camelCase: 'Solicitud' },
+      { idStatus: 2, status: 'En espera de Cita', icon: 'pi pi-hourglass', color: '#673AB7', image: 'game-controller.jpg', current: true, completed: false, camelCase: 'EsperaCita' },
+      { idStatus: 3, status: 'Confirmacion de Cita', icon: 'pi pi-calendar-clock', color: '#FF9800', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'ConfirmacionCita'},
+      { idStatus: 4, status: 'Instalacion', icon: 'pi pi-home', color: '#607D8B', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'Instalacion' },
+      { idStatus: 5, status: 'Instalado', icon: 'pi pi-check-square', color: '#4CAF50', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'Instalado' },
 ])
 
-let listadoStatus: Status[]=[];
-await useFetch('/api/instalaciones/status').then(res => {
-  listadoStatus = res.data.value?.data ?? [];
-});
-
-
 const route = useRoute();
-let folioInstalacion = route.params.folio;
 
+// Usar refs reactivos
+const infoCompleta = ref<InstalacionCompleta[]>([])
 
-let listadoUsuarios: Usuario[] = [];
-let listadoInstalaciones: Instalacion[]= [];
-let infoCompleta: InstalacionCompleta[] = [];
+// Función para cargar los datos
+const cargarDatos = async () => {
+  const folioInstalacion = route.params.folio
 
+  // Cargar datos en paralelo
+  const [statusRes, usuariosRes, instalacionesRes] = await Promise.all([
+    $fetch('/api/instalaciones/status'),
+    $fetch('/api/usuarios/usuarios'),
+    $fetch('/api/instalaciones/instalaciones')
+  ])
 
+  const listadoStatus: Status[] = statusRes?.data ?? []
+  const listadoUsuarios: Usuario[] = usuariosRes?.data ?? []
+  const listadoInstalaciones: Instalacion[] = instalacionesRes?.data ?? []
 
+  // Buscar la instalación específica y enriquecerla
+  const instalacionEncontrada = listadoInstalaciones.find(item => item.folio == folioInstalacion)
 
+  if (instalacionEncontrada) {
+    infoCompleta.value = [{
+      ...instalacionEncontrada,
+      usuario: listadoUsuarios.find(u => u.folio === instalacionEncontrada.folio),
+      status: listadoStatus.find(s => s.descripcion === instalacionEncontrada.status)
+    }]
+  }
 
-await useFetch('/api/usuarios/usuarios').then(res => {
-  listadoUsuarios = res.data.value?.data ?? [];
-});
+  console.log('Datos cargados:', infoCompleta.value)
+}
 
+// Cargar datos cuando el componente se monta
+onMounted(async () => {
+  await cargarDatos()
+  await nextTick()
 
-await useFetch('/api/instalaciones/instalaciones').then(res => {
-  listadoInstalaciones = res.data.value?.data ?? [];
-});
+  // Scroll al paso actual
+  const anchor = document.querySelector('#paso' + infoCompleta.value[0]?.status?.idStatus)
+  if (anchor) {
+    anchor.scrollIntoView({ behavior: 'smooth' })
+  }
+})
 
+// Recargar datos cuando cambia el folio en la ruta
+watch(() => route.params.folio, async () => {
+  await cargarDatos()
+  await nextTick()
 
- listadoInstalaciones.forEach((item)=>{
-      if(item.folio == folioInstalacion){
-        infoCompleta = [item].map(instalacion=>({
-          ...instalacion,
-          usuario: listadoUsuarios.find(u => u.folio === instalacion.folio),
-          status: listadoStatus.find(s => s.descripcion === instalacion.status)
-        }))
-      }
-    })
-
-
-
-    console.log(infoCompleta);
+  const anchor = document.querySelector('#paso' + infoCompleta.value[0]?.status?.idStatus)
+  if (anchor) {
+    anchor.scrollIntoView({ behavior: 'smooth' })
+  }
+})
 
 
 
