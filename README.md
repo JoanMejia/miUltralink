@@ -73,3 +73,12 @@ bun run preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+
+
+
+
+Pasos para instalacion
+npm i
+agregar archivo .env y sus variables de entorno
+instalar mongo en caso de que no se tenga instaldo y crear o restaurar las bd necesarias
