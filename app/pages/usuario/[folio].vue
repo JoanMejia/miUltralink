@@ -1,7 +1,7 @@
 <!-- ejemplo de URL para probar:
 http://localhost:3000/usuario/INS251030-00002 -->
 <template>
-  <div class="p-4">
+  <div class="p-4 espacio-superior">
 
 
     <!-- <pre>{{infoCompleta}}</pre> -->
@@ -12,7 +12,7 @@ http://localhost:3000/usuario/INS251030-00002 -->
           <span class="flex w-8 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm" :class="{
             'current-marker': slotProps.item.idStatus == (infoCompleta[0]?.status?.idStatus ?? 1) + 1,
             'completed-marker': slotProps.item.idStatus <= (infoCompleta[0]?.status?.idStatus ?? 1)
-          }" :id="'paso' + slotProps.item.idStatus" :style="{ backgroundColor: slotProps.item.color }">
+          }" :id="'paso' + slotProps.item.idStatus" :style="{ backgroundColor: slotProps.item.color }+';border: 0px solid #4CAF50;'">
             <i :class="slotProps.item.icon"></i>
           </span>
         </template>
@@ -173,9 +173,7 @@ watch(() => route.params.folio, async () => {
     }
 
     /* // Los marcadores completados también tienen un estilo especial */
-    .completed-marker {
-        border: 3px solid #4CAF50;
-    }
+    
 }
 
 @keyframes pulse {
@@ -210,4 +208,9 @@ watch(() => route.params.folio, async () => {
 <style>
 body{
   height: 3500px;
-}</style>
+}
+.espacio-superior{
+  padding-top: 3rem;
+}
+
+</style>

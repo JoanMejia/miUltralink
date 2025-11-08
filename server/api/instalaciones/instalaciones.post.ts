@@ -75,7 +75,8 @@ export default defineEventHandler(async (event) => {
         _id: resultNuevoUsuario.insertedId,
         _idInstalacion: resultNuevaInstalacion.insertedId,
         ...nuevoUsuario
-      }
+      },
+      urlmiUltralink: 'http://localhost:3000/usuario/'+nuevoUsuario.folio
     }
   } catch (error: any) {
     if (error.statusCode) throw error
