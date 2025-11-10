@@ -16,65 +16,73 @@ const generarFolio = (): string => {
 export default defineEventHandler(async (event) => {
   try {
 
-    console.log("Entra al post");
     const body = await readBody(event)
 
     // Validación básica
-    if (!body.nombre || !body.apellidos || !body.telefono || !body.correo || !body.direccion || !body.ciudad || !body.estado || !body.codigoPostal) {
+    if (!body.nombre || !body.telefono || !body.calle || !body.numero || !body.plan) {
       throw createError({
         statusCode: 400,
-        message: 'Todos los campos son requeridos'
+        message: 'Hacen falta llenar campos requeridos'
       })
     }
 
     const collectionUsuario = await getCollection('Usuario');
 
-    // Verificar si el email ya existe
-    const existingUser = await collectionUsuario.findOne({ correo: body.correo })
-    if (existingUser) {
+    if (body.correo) {
+      // Verificar si el email ya existe
+      const existingUser = await collectionUsuario.findOne({ correo: body.correo })
+      if (existingUser) {
         throw createError({
-        statusCode: 409,
-        message: 'El email ya está registrado'
-    })
-}
+          statusCode: 409,
+          message: 'El email ya está registrado'
+        })
+      }
+    }
 
     // Generar folio único
     const folio = generarFolio()
 
-    const nuevoUsuario: Omit<Usuario, '_id'> = {
+    const nuevoUsuario:Usuario = {
         folio: folio,
         nombre: body.nombre,
-        apellidos: body.apellidos,
-        rol: 'Cliente',
         telefono: body.telefono,
-        correo: body.correo
+        correo: body.correo,
+        direccion: {
+          calle: body.calle,
+          numero: body.numero
+        }
     }
 
-    const resultNuevoUsuario = await collectionUsuario.insertOne(nuevoUsuario)
-
-
-    const collectionInstalacion = await getCollection('Instalacion');
-    const nuevaInstalacion: Omit<Instalacion, '_id' > = {
-        folio: folio,
-        calificacion: body.calificacion || '',
-        descripcion: body.descripcion || '',
-        direccion: body.direccion,
-        fechaSolicitud: new Date,
-        observaciones: body.observaciones || '',
-        ciudad: body.ciudad,
-        estado: body.estado,
-        codigoPostal: body.codigoPostal,
-        status: 'Solicitud'
-    }
-    const resultNuevaInstalacion = await collectionInstalacion.insertOne(nuevaInstalacion);
+    const resultNuevoUsuario = await collectionUsuario.insertOne(nuevoUsuario);
+  
+  const nuevaInstalacion: Instalacion = {
+      folio: folio,
+      calificacion: body.calificacion || '',
+     plan: body.plan || '',
+     timeStamps:{
+      fechaSolicitado: new Date(),
+     },
+      statusAtual: 'Solicitud',
+      pasos:{
+        solicitado: true,
+        pendienteAsignacion: false,
+        pendienteConfirmacion: false,
+        citaConfirmada: false,
+        enProgresoInstalacion: false,
+        instalacionConpletada: false,
+        cancelado: false
+      }
+  }
+  
+  const collectionInstalacion = await getCollection('Instalacion');
+  const resultNuevaInstalacion = await collectionInstalacion.insertOne(nuevaInstalacion);
 
 
     return {
       success: true,
       data: {
-        _id: resultNuevoUsuario.insertedId,
-        _idInstalacion: resultNuevaInstalacion.insertedId,
-        ...nuevoUsuario
+        ...nuevoUsuario,
+        ...nuevaInstalacion
       },
       urlmiUltralink: 'http://localhost:3000/usuario/'+nuevoUsuario.folio
     }

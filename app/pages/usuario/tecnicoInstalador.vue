@@ -3,22 +3,14 @@
 
         <!-- <pre>{{ infoCompletaInstalacion }}</pre> -->
 
-        
-       
-
-
-
-
         <div v-for="solicitudActual in infoCompletaInstalacion">
             <Card>
-                <template #title>Simple Card</template>
+                <template #title>{{ solicitudActual.folio }}</template>
                 <template #content>
-                    <p>Folio: {{ solicitudActual.folio }}</p>
-                    <p>Nombre: {{ solicitudActual.usuario.nombre }} {{ solicitudActual.usuario.apellidos }}</p>
-                    <p>Direccion: {{ solicitudActual.direccion }}</p>
-                    <p>Ciudad: {{ solicitudActual.ciudad }}</p>
-                    <p>Estado: {{ solicitudActual.estado }}</p>
-
+                    <p>Nombre: {{ solicitudActual.usuario.nombre }}</p>
+                    <p>Direccion: {{ solicitudActual.usuario.direccion.calle }} {{ solicitudActual.usuario.direccion.numero }}</p>
+                    <p>Ciudad: {{ solicitudActual.usuario.direccion.ciudad }}</p>
+                    <p>Estado: {{ solicitudActual.usuario.direccion.estado }}</p>
 
                     <Button :onclick="atender" >Atender</Button>
                 </template>
@@ -36,6 +28,7 @@ import type { Status } from '~~/server/models/Status';
 import { ref, watch } from "vue";
 import { onMounted, nextTick } from 'vue'
 import { item } from '@primeuix/themes/aura/breadcrumb';
+import type { Tecnico } from '~~/server/models/Tecnico';
 
 
     type InstalacionCompleta = Omit<Instalacion, 'status'> & {
@@ -48,24 +41,52 @@ import { item } from '@primeuix/themes/aura/breadcrumb';
 // variables reactivas
 const instalacionEncontrada = ref<Instalacion[]>([]);
 const infoCompletaInstalacion = ref<InstalacionCompleta[]>([]);
+const infoTecnico = ref<Tecnico>();
 
 
 
 const cargarDatos = async () => {
     // Cargar datos en paralelo
-    const [statusRes, usuariosRes, instalacionesRes] = await Promise.all([
+    const [statusRes, usuariosRes, instalacionesRes, tecnico] = await Promise.all([
         $fetch('/api/instalaciones/status'),
         $fetch('/api/usuarios/usuarios'),
-        $fetch('/api/instalaciones/instalaciones')
+        $fetch('/api/instalaciones/instalaciones'),
+        $fetch('/api/tecnicos/tecnicos')
     ])
+
+
+
+
+    //se obtiene un tecnico random como prueba par el registro en la instalacion
+    const listadoTecnicos: Tecnico[] = tecnico?.data ?? [];
+    if (listadoTecnicos.length > 0) {
+        const indexRandom = Math.floor(Math.random() * listadoTecnicos.length);
+        infoTecnico.value = listadoTecnicos[indexRandom];
+    }
+
+
+    
 
     const listadoInstalaciones: Instalacion[] = (instalacionesRes?.data ?? []).map(inst => ({
         ...inst,
-        fechaSolicitud: new Date(inst.fechaSolicitud)
+        timeStamps:{
+            fechaSolicitado: new Date(inst.timeStamps.fechaSolicitado),
+            fechapendienteasignacion: null,
+            fechaPendienteConfirmacion: null,
+            fechaCitaConfirmada: null,
+            fechaEnProgresoInstalacion: null,
+            fechaInstalacionCompletada: null,
+            fechaCancelacion: null,
+        },
+        citaDetalle:{
+            fechaPropuesta: null,
+            confirmacionUsuario:false,
+            fechaConfirmacion: null
+        }
     }))
 
 
-    instalacionEncontrada.value = listadoInstalaciones.filter(item => item.status === 'Solicitud');
+    instalacionEncontrada.value = listadoInstalaciones.filter(item => item.statusAtual === 'Solicitud');
 
 
     const listadoStatus: Status[] = statusRes?.data ?? []
@@ -76,7 +97,7 @@ const cargarDatos = async () => {
        
 
         const usuarioActual = listadoUsuarios.find(u => u.folio === item.folio);
-        const statusActual = listadoStatus.find(s => s.descripcion === item.status);
+        const statusActual = listadoStatus.find(s => s.descripcion === item.statusAtual);
 
         if (usuarioActual && statusActual) {
             const infoCompleta: InstalacionCompleta = {

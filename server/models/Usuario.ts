@@ -1,14 +1,14 @@
 import { ObjectId } from 'mongodb'
 
-export interface Usuario {
-  _id?: string |ObjectId,
-  folio: string,
-  nombre: string,
-  apellidos: string,
-  rol:string,
-  telefono: string,
-  correo: string
-}
+// export interface Usuario {
+//   _id?: string |ObjectId,
+//   nombre: string,
+//   folio: string,
+//   apellidos: string,
+//   rol:string,
+//   telefono: string,
+//   correo: string
+// }
 
 export const UserSchema = {
   validator: {
@@ -35,5 +35,22 @@ export const UserSchema = {
         }
       }
     }
+  }
+}
+
+
+
+export interface Usuario {
+  // _id?: string |ObjectId,
+  folio: string
+  nombre: string,
+  correo?:string
+  telefono: string,
+  direccion: {
+    calle: string,
+    numero: string,
+    codigoPostal?: string
+    ciudad?: string,
+    estado?: string,
   }
 }

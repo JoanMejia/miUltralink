@@ -42,7 +42,7 @@ http://localhost:3000/usuario/INS251030-00002 -->
                 <p>Estado: {{ infoCompleta[0].estado }}</p>
                 <p>codigo postal: {{ infoCompleta[0].codigoPostal }}</p>
                 <h3>Info Cliente</h3>
-                <p>Nombre: {{ infoCompleta[0].usuario?.nombre }} {{ infoCompleta[0].usuario?.apellidos }}</p>
+                <p>Nombre: {{ infoCompleta[0].usuario?.nombre }}</p>
                 <p>Telefono: {{ infoCompleta[0].usuario?.telefono }}</p>
                 <p>Correo: {{ infoCompleta[0].usuario?.correo }}</p>
                 <!-- <Button label="Read more" variant="text" @click="showToast" /> -->
@@ -103,9 +103,16 @@ const cargarDatos = async () => {
   // const listadoInstalaciones: Instalacion[] = instalacionesRes?.data ?? [];
 
   const listadoInstalaciones: Instalacion[] = (instalacionesRes?.data ?? []).map(inst => ({
-  ...inst,
-  fechaSolicitud: new Date(inst.fechaSolicitud)
-}))
+    ...inst,
+    timeStamps: {
+      fechaSolicitado: new Date(inst.timeStamps.fechaSolicitado)
+    },
+    citaDetalle: {
+      fechaPropuesta: null,
+      confirmacionUsuario: false,
+      fechaConfirmacion: null
+    }
+  }))
 
   // Buscar la instalación específica y enriquecerla
   const instalacionEncontrada = listadoInstalaciones.find(item => item.folio == folioInstalacion)
@@ -114,7 +121,7 @@ const cargarDatos = async () => {
     infoCompleta.value = [{
       ...instalacionEncontrada,
       usuario: listadoUsuarios.find(u => u.folio === instalacionEncontrada.folio),
-      status: listadoStatus.find(s => s.descripcion === instalacionEncontrada.status)
+      status: listadoStatus.find(s => s.descripcion === instalacionEncontrada.statusAtual)
     }]
   }
 
