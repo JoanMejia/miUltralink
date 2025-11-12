@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb'
 import { Usuario } from './Usuario'
+import { Schema, model, Document } from "mongoose";
 
 // export interface Instalacion {
 //   _id?: string | ObjectId,
@@ -15,13 +16,40 @@ import { Usuario } from './Usuario'
 //   status: string
 // }
 
-export const InstalacionSchema = {
-  validator: {
-    $jsonSchema: {
-      bsonType: 'object'
-    }
+// export const InstalacionSchema = {
+//   validator: {
+//     $jsonSchema: {
+//       bsonType: 'object'
+//     }
+//   }
+// }
+
+const InstalacionSchema = new Schema<Instalacion>({
+  folio: { type: String, required: true },
+  plan: { type: String, required: true },
+  statusAtual: { type: String, required: true },
+   pasos:{
+    solicitado: { type: String, required: true },
+    pendienteAsignacion: { type: String, required: true },
+    pendienteConfirmacion: { type: String, required: true },
+    citaConfirmada: { type: String, required: true },
+    enProgresoInstalacion: { type: String, required: true },
+    instalacionConpletada: { type: String, required: true },
+    cancelado: { type: String, required: true }
+  },
+  timeStamps: {
+    fechaSolicitado: { type: Date, required: true }
+  },
+  citaDetalle:{
+    fechaPropuesta: { type: Date, required: false },
+    confirmacionUsuario: { type: String, required: true },
+    fechaConfirmacion:{ type: Date, required: false }
   }
-}
+});
+
+
+// uso de esquema
+// const InstalacionModelo = model<Instalacion>("Instalacion", InstalacionSchema);
 
 
 

@@ -62,7 +62,7 @@ export default defineEventHandler(async (event) => {
      timeStamps:{
       fechaSolicitado: new Date(),
      },
-      statusAtual: 'Solicitud',
+      statusAtual: 'Solicitado',
       pasos:{
         solicitado: true,
         pendienteAsignacion: false,

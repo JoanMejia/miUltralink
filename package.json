@@ -14,6 +14,7 @@
     "@primeuix/themes": "^1.2.5",
     "better-sqlite3": "^12.4.1",
     "mongodb": "^6.20.0",
+    "mongoose": "^8.19.3",
     "nuxt": "^4.2.0",
     "primeicons": "^7.0.0",
     "primevue": "^4.4.1",

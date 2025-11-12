@@ -10,9 +10,11 @@ http://localhost:3000/usuario/INS251030-00002 -->
       <Timeline :value="pasosInstalacion" align="alternate" class="customized-timeline">
         <template #marker="slotProps">
           <span class="flex w-8 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm" :class="{
-            'current-marker': slotProps.item.idStatus == (infoCompleta[0]?.status?.idStatus ?? 1) + 1,
-            'completed-marker': slotProps.item.idStatus <= (infoCompleta[0]?.status?.idStatus ?? 1)
-          }" :id="'paso' + slotProps.item.idStatus" :style="{ backgroundColor: slotProps.item.color }+';border: 0px solid #4CAF50;'">
+            'current-marker': slotProps.item.status == infoCompleta[0]?.statusAtual,
+            'completed-marker': slotProps.item.idStatus < PasosActivos.length && !PasosActivos.includes('cancelado')
+          }" :id="'paso' + slotProps.item.idStatus"
+            :style="{ backgroundColor: slotProps.item.color }+';border: 0px solid #4CAF50;'">
+
             <i :class="slotProps.item.icon"></i>
           </span>
         </template>
@@ -27,26 +29,63 @@ http://localhost:3000/usuario/INS251030-00002 -->
             </template>
             <template #content>
 
-              <!-- <div style="background-color: red;" v-if="slotProps.item.status == 'Confirmacion de Cita' ">
-                      aquí va el template para confirmacion cita
-                    </div> -->
-              <div
-                v-if="infoCompleta[0]?.status?.idStatus && slotProps.item.idStatus <= infoCompleta[0].status.idStatus">
-
-                <!-- Mosntrar en base al estado actual mientras sean ese paso o anteriores -->
-                <!-- menor o igual al idStatus del status de la instalacion -->
-                <!-- <div v-if="slotProps.item.idStatus <= infoCompleta[0]"></div> -->
-                 <p><strong>FOLIO: {{ infoCompleta[0].folio }}</strong></p>
-                <p>Direccion: {{ infoCompleta[0].direccion }}</p>
-                <p>Ciudad: {{ infoCompleta[0].ciudad }}</p>
-                <p>Estado: {{ infoCompleta[0].estado }}</p>
-                <p>codigo postal: {{ infoCompleta[0].codigoPostal }}</p>
+              <div v-if="slotProps.item.status == 'Solicitado'">
+                <p><strong>FOLIO: {{ infoCompleta[0]?.folio }}</strong></p>
+                <p>Plan: {{ infoCompleta[0]?.plan }}</p>
+                <p>Direccion: {{ infoCompleta[0]?.usuario?.direccion.calle }} {{
+                  infoCompleta[0]?.usuario?.direccion.numero }}</p>
+                <p>Ciudad: {{ infoCompleta[0]?.usuario?.direccion.ciudad }}</p>
+                <p>Estado: {{ infoCompleta[0]?.usuario?.direccion.estado }}</p>
+                <p>codigo postal: {{ infoCompleta[0]?.usuario?.direccion.codigoPostal }}</p>
                 <h3>Info Cliente</h3>
-                <p>Nombre: {{ infoCompleta[0].usuario?.nombre }}</p>
-                <p>Telefono: {{ infoCompleta[0].usuario?.telefono }}</p>
-                <p>Correo: {{ infoCompleta[0].usuario?.correo }}</p>
-                <!-- <Button label="Read more" variant="text" @click="showToast" /> -->
+                <p>Nombre: {{ infoCompleta[0]?.usuario?.nombre }}</p>
+                <p>Telefono: {{ infoCompleta[0]?.usuario?.telefono }}</p>
+                <p>Correo: {{ infoCompleta[0]?.usuario?.correo }}</p>
               </div>
+
+              <div v-if="slotProps.item.status == 'Pendiente de Asignacion de Cita'">
+                <div v-if="infoCompleta[0]?.pasos.pendienteAsignacion">
+                  <p>Tecnico asignado: {{ infoCompleta[0].tecnico?.nombre }}</p>
+                  <p>Dentro de un periodo de tiempo el tecnico le asignara una fecha para la instalacion</p>
+                </div>
+              </div>
+
+              <div v-if="slotProps.item.status == 'Pendiente de Confirmar Cita'">
+                <div v-if="infoCompleta[0]?.pasos.pendienteConfirmacion">
+                  <p>Fecha propuesta: {{ infoCompleta[0].citaDetalle?.fechaPropuesta}}</p>
+                  <Button label="Aceptar" variant="text" @click="abrirVentanaConfirmacionCita"></Button>
+                  <Button label="Otra Fecha" variant="text"></Button>
+                </div>
+              </div>
+              <div v-if="slotProps.item.status == 'Cita Confirmada'">
+                <div v-if="infoCompleta[0]?.pasos.citaConfirmada">
+                  fecha confirm
+                  fecha cita
+                  aquí va el template cita confirmada
+                </div>
+              </div>
+              <div v-if="slotProps.item.status == 'Instalando'">
+                <div v-if="infoCompleta[0]?.pasos.enProgresoInstalacion">
+                  nombre del tecnico
+                </div>
+              </div>
+              <div v-if="slotProps.item.status == 'Completado'">
+                <div v-if="infoCompleta[0]?.pasos.instalacionConpletada">
+                  numero de serie modem
+                  observaciones
+                  seleccionador de estrellas
+                  caja de comentarios
+                </div>
+              </div>
+              <div v-if="slotProps.item.status == 'Cancelado'">
+                <div v-if="infoCompleta[0]?.pasos.cancelado">
+                  Cancelaste la cita
+                </div>
+              </div>
+
+
+
+
 
 
 
@@ -55,6 +94,18 @@ http://localhost:3000/usuario/INS251030-00002 -->
         </template>
       </Timeline>
     </div>
+
+
+    <Dialog v-model:visible="mostrarVentanaConfirmacionCita" header="Confirmar Cita" :modal="true"
+      :style="{ width: '30rem' }">
+      <div class="flex flex-col gap-4">
+        <label for="fecha-cita">Tu cita sera el {{ infoCompleta[0]?.citaDetalle?.fechaPropuesta }}</label>
+      </div>
+      <template #footer>
+        <Button label="Confirmar" @click="confirmarCita" />
+        <Button label="Cancelar" severity="secondary" @click="cerrarVentanaConfirmacionCita" />
+      </template>
+    </Dialog>
 
   </div>
 
@@ -65,68 +116,173 @@ import type { Usuario } from '../../../server/models/Usuario';
 import type { Instalacion} from '../../../server/models/Instalacion';
 import type { Status } from '~~/server/models/Status';
 import { ref, watch } from "vue";
-import { onMounted, nextTick } from 'vue'
+import { onMounted, nextTick } from 'vue';
+import type { Tecnico } from '~~/server/models/Tecnico';
+import { date } from '@primeuix/themes/aura/datepicker';
+import { json } from 'stream/consumers';
+import { parse } from 'path';
+import { item } from '@primeuix/themes/aura/breadcrumb';
+
+
+//variables reactivas
+const mostrarVentanaConfirmacionCita = ref(false);
 
 // Define a type for the enriched installation data
 type InstalacionCompleta = Omit<Instalacion, 'status'> & {
   usuario?: Usuario;
   status?: Status;
+  tecnico?: Tecnico;
   [key: string]: any; // Index signature for dynamic property access
 }
 
+
+const PasosActivos = ref<string[]>([]);
+
 const pasosInstalacion = ref([
-      { idStatus: 1, status: 'Solicitud', icon: 'pi pi-plus-circle', color: '#9C27B0', image: 'game-controller.jpg', current: false, completed: true, camelCase: 'Solicitud' },
-      { idStatus: 2, status: 'En espera de Cita', icon: 'pi pi-hourglass', color: '#673AB7', image: 'game-controller.jpg', current: true, completed: false, camelCase: 'EsperaCita' },
-      { idStatus: 3, status: 'Confirmacion de Cita', icon: 'pi pi-calendar-clock', color: '#FF9800', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'ConfirmacionCita'},
-      { idStatus: 4, status: 'Instalacion', icon: 'pi pi-home', color: '#607D8B', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'Instalacion' },
-      { idStatus: 5, status: 'Instalado', icon: 'pi pi-check-square', color: '#4CAF50', image: 'game-controller.jpg', current: false, completed: false, camelCase: 'Instalado' },
+      { idStatus: 1, status: 'Solicitado', icon: 'pi pi-plus-circle', color: '#9C27B0', current: false, completed: true, camelCase: 'solicitado' },
+      { idStatus: 2, status: 'Pendiente de Asignacion de Cita', icon: 'pi pi-hourglass', color: '#673AB7',  current: true, completed: false, camelCase: 'pendienteAsignacion' },
+      { idStatus: 3, status: 'Pendiente de Confirmar Cita', icon: 'pi pi-calendar-clock', color: '#FF9800',  current: false, completed: false, camelCase: 'pendienteConfirmacion'},
+      { idStatus: 4, status: 'Cita Confirmada', icon: 'pi pi-home', color: '#607D8B',  current: false, completed: false, camelCase: 'citaConfirmada' },
+      { idStatus: 5, status: 'Instalando', icon: 'pi pi-check-square', color: '#4CAF50',  current: false, completed: false, camelCase: 'enProgresoInstalacion' },
+      { idStatus: 6, status: 'Completado', icon: 'pi pi-check-square', color: '#4CAF50',  current: false, completed: false, camelCase: 'instalacionConpletada' },
+      // { idStatus: 7, status: 'Cancelado', icon: 'pi pi-check-square', color: '#4CAF50',  current: false, completed: false, camelCase: 'cancelado' },
 ])
 
 const route = useRoute();
 
 // Usar refs reactivos
 const infoCompleta = ref<InstalacionCompleta[]>([])
+const listadoInstalaciones = ref<Instalacion[]>([]);
 
+
+
+
+let folioInstalacion = route.params.folio;
 // Función para cargar los datos
 const cargarDatos = async () => {
-  const folioInstalacion = route.params.folio
+  folioInstalacion = route.params.folio
 
   // Cargar datos en paralelo
-  const [statusRes, usuariosRes, instalacionesRes] = await Promise.all([
+  const [statusRes, usuariosRes, instalacionesRes, tecnicosRes] = await Promise.all([
     $fetch('/api/instalaciones/status'),
     $fetch('/api/usuarios/usuarios'),
-    $fetch('/api/instalaciones/instalaciones')
+    $fetch('/api/instalaciones/instalaciones'),
+    $fetch('/api/tecnicos/tecnicos')
+
   ])
 
   const listadoStatus: Status[] = statusRes?.data ?? []
   const listadoUsuarios: Usuario[] = usuariosRes?.data ?? []
+  const listadoTecnicos: Tecnico[] = tecnicosRes.data??[];
   // const listadoInstalaciones: Instalacion[] = instalacionesRes?.data ?? [];
 
-  const listadoInstalaciones: Instalacion[] = (instalacionesRes?.data ?? []).map(inst => ({
+
+listadoInstalaciones.value = (instalacionesRes?.data).map(inst => ({
     ...inst,
     timeStamps: {
-      fechaSolicitado: new Date(inst.timeStamps.fechaSolicitado)
+      fechaSolicitado: new Date(inst.timeStamps.fechaSolicitado),
+      fechapendienteasignacion: inst.timeStamps.fechapendienteasignacion?new Date(inst.timeStamps.fechapendienteasignacion):null,
+      fechaPendienteConfirmacion: inst.timeStamps.fechaPendienteConfirmacion?new Date(inst.timeStamps.fechaPendienteConfirmacion):null,
+      fechaCitaConfirmada: inst.timeStamps.fechaCitaConfirmada?new Date(inst.timeStamps.fechaCitaConfirmada):null,
+      fechaEnProgresoInstalacion: inst.timeStamps.fechaEnProgresoInstalacion?new Date(inst.timeStamps.fechaEnProgresoInstalacion):null,
+      fechaInstalacionCompletada: inst.timeStamps.fechaInstalacionCompletada?new Date(inst.timeStamps.fechaInstalacionCompletada):null,
+      fechaCancelacion: inst.timeStamps.fechaCancelacion?new Date(inst.timeStamps.fechaCancelacion):null
     },
     citaDetalle: {
-      fechaPropuesta: null,
-      confirmacionUsuario: false,
-      fechaConfirmacion: null
+      fechaPropuesta: inst.citaDetalle?.fechaPropuesta? new Date(inst.citaDetalle?.fechaPropuesta): null,
+      confirmacionUsuario: inst.citaDetalle?.confirmacionUsuario? inst.citaDetalle.confirmacionUsuario:false,
+      fechaConfirmacion: inst.citaDetalle?.fechaConfirmacion? new Date(inst.citaDetalle.fechaConfirmacion): null
     }
-  }))
+  }));
 
   // Buscar la instalación específica y enriquecerla
-  const instalacionEncontrada = listadoInstalaciones.find(item => item.folio == folioInstalacion)
+  const instalacionEncontrada = listadoInstalaciones.value.find(item => item.folio == folioInstalacion)
 
   if (instalacionEncontrada) {
     infoCompleta.value = [{
       ...instalacionEncontrada,
       usuario: listadoUsuarios.find(u => u.folio === instalacionEncontrada.folio),
-      status: listadoStatus.find(s => s.descripcion === instalacionEncontrada.statusAtual)
+      status: listadoStatus.find(s => s.descripcion === instalacionEncontrada.statusAtual),
+      tecnico: listadoTecnicos.find(t=>t.numeroEmpleado === instalacionEncontrada.tecnicoId)
     }]
+
+    if(infoCompleta.value[0]?.pasos){
+      const pasos = infoCompleta.value[0].pasos;
+      PasosActivos.value =  Object.keys(pasos).filter(key => pasos[key as keyof typeof pasos] === true);
+    }
+
   }
 
   console.log('Datos cargados:', infoCompleta.value)
 }
+
+
+const abrirVentanaConfirmacionCita = () => {
+    // instalacionSeleccionada.value = instalacion;
+    // fechaSeleccionada.value = null;
+    mostrarVentanaConfirmacionCita.value = true;
+}
+
+const cerrarVentanaConfirmacionCita = () => {
+    mostrarVentanaConfirmacionCita.value = false;
+    // fechaSeleccionada.value = null;
+    // instalacionSeleccionada.value = null;
+}
+
+const confirmarCita = async () =>{
+
+
+
+  const datosActualiza = {
+    folio: infoCompleta.value[0]?.folio,
+    statusAtual: 'Cita Confirmada',
+    pasos: {
+      solicitado: true,
+      pendienteAsignacion: true,
+      pendienteConfirmacion: true,
+      citaConfirmada: true,
+      enProgresoInstalacion: false,
+      instalacionConpletada: false,
+      cancelado: false
+    },
+    timeStamps: {
+      fechaSolicitado: infoCompleta.value[0]?.timeStamps.fechaSolicitado,
+      fechapendienteasignacion: infoCompleta.value[0]?.timeStamps.fechapendienteasignacion,
+      fechaPendienteConfirmacion: infoCompleta.value[0]?.timeStamps.fechaPendienteConfirmacion,
+      fechaCitaConfirmada: new Date(),
+      fechaEnProgresoInstalacion: null,
+      fechaInstalacionCompletada: null,
+      fechaCancelacion: null
+    },
+    citaDetalle: {
+      fechaPropuesta: infoCompleta.value[0]?.citaDetalle?.fechaPropuesta,
+      confirmacionUsuario: true,
+      fechaConfirmacion: new Date()
+    }
+  }
+
+
+
+
+  // Llamar a la API para actualizar la instalación
+  const response = await $fetch('/api/instalaciones/instalaciones', {
+    method: 'PUT',
+    body: datosActualiza
+  });
+  
+  if (response?.success) {
+    console.log("Instalación actualizada correctamente");
+  
+    // Recargar los datos para reflejar los cambios
+    await cargarDatos();
+  
+    cerrarVentanaConfirmacionCita();
+  }
+}
+
+
+
+
 
 // Cargar datos cuando el componente se monta
 onMounted(async () => {
