@@ -9,13 +9,11 @@ http://localhost:3000/usuario/INS251030-00002 -->
     <div class="card">
       <Timeline :value="pasosInstalacion" align="alternate" class="customized-timeline">
         <template #marker="slotProps">
-          <span class="flex w-8 h-8 items-center justify-center text-white rounded-full z-10 shadow-sm" :class="{
+          <span class="timeline-marker flex items-center justify-center text-white rounded-full z-10 shadow-sm" :class="{
             'current-marker': slotProps.item.status == infoCompleta[0]?.statusAtual,
             'completed-marker': slotProps.item.idStatus < PasosActivos.length && !PasosActivos.includes('cancelado')
-          }" :id="'paso' + slotProps.item.idStatus"
-            :style="{ backgroundColor: slotProps.item.color }+';border: 0px solid #4CAF50;'">
-
-            <i :class="slotProps.item.icon"></i>
+          }" :id="'paso' + slotProps.item.camelCase" style="border-radius: 1rem;">
+            <i :class="slotProps.item.iconfa"></i>
           </span>
         </template>
         <template #content="slotProps">
@@ -25,10 +23,19 @@ http://localhost:3000/usuario/INS251030-00002 -->
               {{ slotProps.item.status }}
             </template>
             <template #subtitle>
-              {{ infoCompleta[0]?.['fecha' + slotProps.item.camelCase] }}
+              <p v-if="slotProps.item.status == 'Solicitado'"> {{ infoCompleta[0]?.timeStamps.fechaSolicitado }}</p>
+              <p v-if="slotProps.item.status == 'Pendiente de Asignacion de Cita'"> {{
+                infoCompleta[0]?.timeStamps.fechapendienteasignacion }}</p>
+              <p v-if="slotProps.item.status == 'Pendiente de Confirmar Cita'"> {{
+                infoCompleta[0]?.timeStamps.fechaPendienteConfirmacion }}</p>
+              <p v-if="slotProps.item.status == 'Cita Confirmada'"> {{ infoCompleta[0]?.timeStamps.fechaCitaConfirmada
+                }}</p>
+              <p v-if="slotProps.item.status == 'Instalando'"> {{ infoCompleta[0]?.timeStamps.fechaEnProgresoInstalacion
+                }}</p>
+              <p v-if="slotProps.item.status == 'Completado'"> {{ infoCompleta[0]?.timeStamps.fechaInstalacionCompletada
+                }}</p>
             </template>
             <template #content>
-
               <div v-if="slotProps.item.status == 'Solicitado'">
                 <p><strong>FOLIO: {{ infoCompleta[0]?.folio }}</strong></p>
                 <p>Plan: {{ infoCompleta[0]?.plan }}</p>
@@ -53,28 +60,35 @@ http://localhost:3000/usuario/INS251030-00002 -->
               <div v-if="slotProps.item.status == 'Pendiente de Confirmar Cita'">
                 <div v-if="infoCompleta[0]?.pasos.pendienteConfirmacion">
                   <p>Fecha propuesta: {{ infoCompleta[0].citaDetalle?.fechaPropuesta}}</p>
-                  <Button label="Aceptar" variant="text" @click="abrirVentanaConfirmacionCita"></Button>
-                  <Button label="Otra Fecha" variant="text"></Button>
+                  <Button v-if="!infoCompleta[0].pasos.citaConfirmada" label="Aceptar" variant="text"
+                    @click="abrirVentanaConfirmacionCita"></Button>
+                  <Button v-if="!infoCompleta[0].pasos.citaConfirmada" label="Otra Fecha" variant="text"></Button>
                 </div>
               </div>
               <div v-if="slotProps.item.status == 'Cita Confirmada'">
                 <div v-if="infoCompleta[0]?.pasos.citaConfirmada">
-                  fecha confirm
-                  fecha cita
-                  aquí va el template cita confirmada
+                  <p>Fecha de Cita: {{ infoCompleta[0].citaDetalle?.fechaPropuesta }}</p>
                 </div>
               </div>
               <div v-if="slotProps.item.status == 'Instalando'">
                 <div v-if="infoCompleta[0]?.pasos.enProgresoInstalacion">
-                  nombre del tecnico
+                  <p>Tecnico asignado: {{ infoCompleta[0].tecnico?.nombre }}</p>
+                  <p>El tecnico esta haciendo la instalacion</p>
                 </div>
               </div>
               <div v-if="slotProps.item.status == 'Completado'">
                 <div v-if="infoCompleta[0]?.pasos.instalacionConpletada">
-                  numero de serie modem
-                  observaciones
-                  seleccionador de estrellas
-                  caja de comentarios
+                  <div class="card flex flex-col justify-center">
+                    <p>Numero de serie del modem: {{ infoCompleta[0].numeroModem }}</p>
+                    <!-- <P>Observaciones: {{ infoCompleta[0].notas }}</P> -->
+                    <Form class="flex flex-col gap-1">
+                      <Rating v-model="valorRating" />
+                      <div class="flex flex-col gap-1">
+                        <Textarea v-model="valorComentarios" autoResize rows="5" style="width: 100%;" />
+                      </div>
+                      <Button type="submit" severity="secondary" label="Enviar" />
+                    </Form>
+                  </div>
                 </div>
               </div>
               <div v-if="slotProps.item.status == 'Cancelado'">
@@ -82,10 +96,6 @@ http://localhost:3000/usuario/INS251030-00002 -->
                   Cancelaste la cita
                 </div>
               </div>
-
-
-
-
 
 
 
@@ -126,6 +136,24 @@ import { item } from '@primeuix/themes/aura/breadcrumb';
 
 //variables reactivas
 const mostrarVentanaConfirmacionCita = ref(false);
+const PasosActivos = ref<string[]>([]);
+const pasosInstalacion = ref([
+      { idStatus: 1, status: 'Solicitado', icon: 'pi pi-plus-circle', iconfa: 'fa-solid fa-plus', camelCase: 'solicitado' },
+      { idStatus: 2, status: 'Pendiente de Asignacion de Cita', icon: 'pi pi-hourglass', iconfa: 'fa-solid fa-calendar', camelCase: 'pendienteAsignacion' },
+      { idStatus: 3, status: 'Pendiente de Confirmar Cita', icon: 'pi pi-calendar-clock', iconfa: 'fa-solid fa-hourglass-half', camelCase: 'pendienteConfirmacion'},
+      { idStatus: 4, status: 'Cita Confirmada', icon: 'pi pi-home', iconfa: 'fa-solid fa-calendar-xmark', camelCase: 'citaConfirmada' },
+      { idStatus: 5, status: 'Instalando', icon: 'pi pi-check-square', iconfa: 'fa-solid fa-screwdriver-wrench', camelCase: 'enProgresoInstalacion' },
+      { idStatus: 6, status: 'Completado', icon: 'pi pi-check-square', iconfa: 'fa-solid fa-check', camelCase: 'instalacionConpletada' }
+])
+const infoCompleta = ref<InstalacionCompleta[]>([])
+const listadoInstalaciones = ref<Instalacion[]>([]);
+const valorRating = ref(0);
+const valorComentarios = ref('');
+
+
+
+
+
 
 // Define a type for the enriched installation data
 type InstalacionCompleta = Omit<Instalacion, 'status'> & {
@@ -136,24 +164,9 @@ type InstalacionCompleta = Omit<Instalacion, 'status'> & {
 }
 
 
-const PasosActivos = ref<string[]>([]);
 
-const pasosInstalacion = ref([
-      { idStatus: 1, status: 'Solicitado', icon: 'pi pi-plus-circle', color: '#9C27B0', current: false, completed: true, camelCase: 'solicitado' },
-      { idStatus: 2, status: 'Pendiente de Asignacion de Cita', icon: 'pi pi-hourglass', color: '#673AB7',  current: true, completed: false, camelCase: 'pendienteAsignacion' },
-      { idStatus: 3, status: 'Pendiente de Confirmar Cita', icon: 'pi pi-calendar-clock', color: '#FF9800',  current: false, completed: false, camelCase: 'pendienteConfirmacion'},
-      { idStatus: 4, status: 'Cita Confirmada', icon: 'pi pi-home', color: '#607D8B',  current: false, completed: false, camelCase: 'citaConfirmada' },
-      { idStatus: 5, status: 'Instalando', icon: 'pi pi-check-square', color: '#4CAF50',  current: false, completed: false, camelCase: 'enProgresoInstalacion' },
-      { idStatus: 6, status: 'Completado', icon: 'pi pi-check-square', color: '#4CAF50',  current: false, completed: false, camelCase: 'instalacionConpletada' },
-      // { idStatus: 7, status: 'Cancelado', icon: 'pi pi-check-square', color: '#4CAF50',  current: false, completed: false, camelCase: 'cancelado' },
-])
 
 const route = useRoute();
-
-// Usar refs reactivos
-const infoCompleta = ref<InstalacionCompleta[]>([])
-const listadoInstalaciones = ref<Instalacion[]>([]);
-
 
 
 
@@ -173,25 +186,25 @@ const cargarDatos = async () => {
 
   const listadoStatus: Status[] = statusRes?.data ?? []
   const listadoUsuarios: Usuario[] = usuariosRes?.data ?? []
-  const listadoTecnicos: Tecnico[] = tecnicosRes.data??[];
+  const listadoTecnicos: Tecnico[] = tecnicosRes.data ?? [];
   // const listadoInstalaciones: Instalacion[] = instalacionesRes?.data ?? [];
 
 
-listadoInstalaciones.value = (instalacionesRes?.data).map(inst => ({
+  listadoInstalaciones.value = (instalacionesRes?.data).map(inst => ({
     ...inst,
     timeStamps: {
       fechaSolicitado: new Date(inst.timeStamps.fechaSolicitado),
-      fechapendienteasignacion: inst.timeStamps.fechapendienteasignacion?new Date(inst.timeStamps.fechapendienteasignacion):null,
-      fechaPendienteConfirmacion: inst.timeStamps.fechaPendienteConfirmacion?new Date(inst.timeStamps.fechaPendienteConfirmacion):null,
-      fechaCitaConfirmada: inst.timeStamps.fechaCitaConfirmada?new Date(inst.timeStamps.fechaCitaConfirmada):null,
-      fechaEnProgresoInstalacion: inst.timeStamps.fechaEnProgresoInstalacion?new Date(inst.timeStamps.fechaEnProgresoInstalacion):null,
-      fechaInstalacionCompletada: inst.timeStamps.fechaInstalacionCompletada?new Date(inst.timeStamps.fechaInstalacionCompletada):null,
-      fechaCancelacion: inst.timeStamps.fechaCancelacion?new Date(inst.timeStamps.fechaCancelacion):null
+      fechapendienteasignacion: inst.timeStamps.fechapendienteasignacion ? new Date(inst.timeStamps.fechapendienteasignacion) : null,
+      fechaPendienteConfirmacion: inst.timeStamps.fechaPendienteConfirmacion ? new Date(inst.timeStamps.fechaPendienteConfirmacion) : null,
+      fechaCitaConfirmada: inst.timeStamps.fechaCitaConfirmada ? new Date(inst.timeStamps.fechaCitaConfirmada) : null,
+      fechaEnProgresoInstalacion: inst.timeStamps.fechaEnProgresoInstalacion ? new Date(inst.timeStamps.fechaEnProgresoInstalacion) : null,
+      fechaInstalacionCompletada: inst.timeStamps.fechaInstalacionCompletada ? new Date(inst.timeStamps.fechaInstalacionCompletada) : null,
+      fechaCancelacion: inst.timeStamps.fechaCancelacion ? new Date(inst.timeStamps.fechaCancelacion) : null
     },
     citaDetalle: {
-      fechaPropuesta: inst.citaDetalle?.fechaPropuesta? new Date(inst.citaDetalle?.fechaPropuesta): null,
-      confirmacionUsuario: inst.citaDetalle?.confirmacionUsuario? inst.citaDetalle.confirmacionUsuario:false,
-      fechaConfirmacion: inst.citaDetalle?.fechaConfirmacion? new Date(inst.citaDetalle.fechaConfirmacion): null
+      fechaPropuesta: inst.citaDetalle?.fechaPropuesta ? new Date(inst.citaDetalle?.fechaPropuesta) : null,
+      confirmacionUsuario: inst.citaDetalle?.confirmacionUsuario ? inst.citaDetalle.confirmacionUsuario : false,
+      fechaConfirmacion: inst.citaDetalle?.fechaConfirmacion ? new Date(inst.citaDetalle.fechaConfirmacion) : null
     }
   }));
 
@@ -203,12 +216,12 @@ listadoInstalaciones.value = (instalacionesRes?.data).map(inst => ({
       ...instalacionEncontrada,
       usuario: listadoUsuarios.find(u => u.folio === instalacionEncontrada.folio),
       status: listadoStatus.find(s => s.descripcion === instalacionEncontrada.statusAtual),
-      tecnico: listadoTecnicos.find(t=>t.numeroEmpleado === instalacionEncontrada.tecnicoId)
+      tecnico: listadoTecnicos.find(t => t.numeroEmpleado === instalacionEncontrada.tecnicoId)
     }]
 
-    if(infoCompleta.value[0]?.pasos){
+    if (infoCompleta.value[0]?.pasos) {
       const pasos = infoCompleta.value[0].pasos;
-      PasosActivos.value =  Object.keys(pasos).filter(key => pasos[key as keyof typeof pasos] === true);
+      PasosActivos.value = Object.keys(pasos).filter(key => pasos[key as keyof typeof pasos] === true);
     }
 
   }
@@ -229,7 +242,7 @@ const cerrarVentanaConfirmacionCita = () => {
     // instalacionSeleccionada.value = null;
 }
 
-const confirmarCita = async () =>{
+const confirmarCita = async () => {
 
 
 
@@ -269,13 +282,13 @@ const confirmarCita = async () =>{
     method: 'PUT',
     body: datosActualiza
   });
-  
+
   if (response?.success) {
     console.log("Instalación actualizada correctamente");
-  
+
     // Recargar los datos para reflejar los cambios
     await cargarDatos();
-  
+
     cerrarVentanaConfirmacionCita();
   }
 }
@@ -288,9 +301,14 @@ const confirmarCita = async () =>{
 onMounted(async () => {
   await cargarDatos()
   await nextTick()
-
+  
+  
+  
+  const pasoActual = pasosInstalacion.value.find(item =>item.status == infoCompleta.value[0]?.statusAtual)?.camelCase;
+  console.log("paso Actual");
+  console.log(pasoActual);
   // Scroll al paso actual
-    const anchor = document.querySelector('#paso' + infoCompleta.value[0]?.status?.idStatus)
+    const anchor = document.querySelector('#paso' + pasoActual)
     if (anchor) {
       anchor.scrollIntoView({ behavior: 'smooth' })
   }
@@ -300,8 +318,9 @@ onMounted(async () => {
 watch(() => route.params.folio, async () => {
   await cargarDatos()
   await nextTick()
-
-  const anchor = document.querySelector('#paso' + infoCompleta.value[0]?.status?.idStatus)
+  
+  const pasoActual = pasosInstalacion.value.find(item =>item.status == infoCompleta.value[0]?.statusAtual)?.camelCase;
+  const anchor = document.querySelector('#paso' + pasoActual)
   if (anchor) {
     anchor.scrollIntoView({ behavior: 'smooth' })
   }
@@ -322,8 +341,8 @@ watch(() => route.params.folio, async () => {
     /* // Remarcar la línea del timeline SOLO para eventos completados (hacia arriba desde el actual) */
     .p-timeline-event:has(.completed-marker) {
         .p-timeline-event-connector {
-            background-color: #4CAF50; 
-            width: 4px; 
+            background-color: #4CAF50;
+            width: 4px;
         }
     }
 
@@ -332,11 +351,32 @@ watch(() => route.params.folio, async () => {
         animation: pulse 2s infinite;
         box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
 /* // Marcador un poco más grande */
-        transform: scale(1.1); 
+        transform: scale(1.1);
     }
 
     /* // Los marcadores completados también tienen un estilo especial */
-    
+
+}
+
+/* // Estilos para el marcador del timeline */
+.timeline-marker {
+    width: 2rem;
+    height: 2rem;
+    min-width: 2rem;
+    min-height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+/* // Estilos para los iconos dentro del marcador */
+.timeline-icon {
+    font-size: 1rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 @keyframes pulse {

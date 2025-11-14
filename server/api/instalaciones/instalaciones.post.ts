@@ -42,28 +42,27 @@ export default defineEventHandler(async (event) => {
     // Generar folio único
     const folio = generarFolio()
 
-    const nuevoUsuario:Usuario = {
-        folio: folio,
-        nombre: body.nombre,
-        telefono: body.telefono,
-        correo: body.correo,
-        direccion: {
-          calle: body.calle,
-          numero: body.numero
-        }
+    const nuevoUsuario: Usuario = {
+      folio: folio,
+      nombre: body.nombre,
+      telefono: body.telefono,
+      correo: body.correo ?? null,
+      direccion: {
+        calle: body.calle,
+        numero: body.numero,
+        codigoPostal: body.codigoPostal ?? null,
+        ciudad: body.ciudad ?? null,
+        estado: body.estado ?? null,
+      }
     }
 
     const resultNuevoUsuario = await collectionUsuario.insertOne(nuevoUsuario);
-  
-  const nuevaInstalacion: Instalacion = {
+
+    const nuevaInstalacion: Instalacion = {
       folio: folio,
-      calificacion: body.calificacion || '',
-     plan: body.plan || '',
-     timeStamps:{
-      fechaSolicitado: new Date(),
-     },
+      plan: body.plan,
       statusAtual: 'Solicitado',
-      pasos:{
+      pasos: {
         solicitado: true,
         pendienteAsignacion: false,
         pendienteConfirmacion: false,
@@ -71,8 +70,11 @@ export default defineEventHandler(async (event) => {
         enProgresoInstalacion: false,
         instalacionConpletada: false,
         cancelado: false
+      },
+      timeStamps: {
+        fechaSolicitado: new Date(),
       }
-  }
+    }
   
   const collectionInstalacion = await getCollection('Instalacion');
   const resultNuevaInstalacion = await collectionInstalacion.insertOne(nuevaInstalacion);

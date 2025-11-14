@@ -19,7 +19,7 @@ export default defineNuxtConfig({
       }
     }
   },
-  css: ['primeicons/primeicons.css', '~/assets/css/main.css'],
+  css: ['primeicons/primeicons.css', '~/assets/css/main.css', '@fortawesome/fontawesome-free/css/all.css'],
    runtimeConfig: {
     // Variables privadas del servidor
     mongodbUri: process.env.MONGODB_URI,// Accedida como: useRuntimeConfig().mongodbUri
