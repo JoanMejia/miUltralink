@@ -82,11 +82,11 @@ http://localhost:3000/usuario/INS251030-00002 -->
                     <p>Numero de serie del modem: {{ infoCompleta[0].numeroModem }}</p>
                     <!-- <P>Observaciones: {{ infoCompleta[0].notas }}</P> -->
                     <Form class="flex flex-col gap-1">
-                      <Rating v-model="valorRating" />
+                      <Rating v-model="valorRating" :readonly="infoCompleta[0].calificacion != 0"/>
                       <div class="flex flex-col gap-1">
-                        <Textarea v-model="valorComentarios" autoResize rows="5" style="width: 100%;" />
+                        <Textarea v-model="valorComentarios" autoResize rows="5" style="width: 100%;"  :readonly="infoCompleta[0].feedback != ''"/>
                       </div>
-                      <Button type="submit" severity="secondary" label="Enviar" />
+                      <Button type="submit" severity="secondary" label="Enviar"  @click="enviarComentarios" :disabled="infoCompleta[0].calificacion != undefined && infoCompleta[0].feedback != ''"/>
                     </Form>
                   </div>
                 </div>
@@ -132,6 +132,7 @@ import { date } from '@primeuix/themes/aura/datepicker';
 import { json } from 'stream/consumers';
 import { parse } from 'path';
 import { item } from '@primeuix/themes/aura/breadcrumb';
+import { value } from '@primeuix/themes/aura/knob';
 
 
 //variables reactivas
@@ -219,6 +220,11 @@ const cargarDatos = async () => {
       tecnico: listadoTecnicos.find(t => t.numeroEmpleado === instalacionEncontrada.tecnicoId)
     }]
 
+
+    //Se cargan los valores de calificacion u caomentarios
+    valorRating.value = infoCompleta.value[0]?.calificacion??0;
+    valorComentarios.value = infoCompleta.value[0]?.feedback??"";
+
     if (infoCompleta.value[0]?.pasos) {
       const pasos = infoCompleta.value[0].pasos;
       PasosActivos.value = Object.keys(pasos).filter(key => pasos[key as keyof typeof pasos] === true);
@@ -291,6 +297,33 @@ const confirmarCita = async () => {
 
     cerrarVentanaConfirmacionCita();
   }
+}
+
+
+
+
+const enviarComentarios = async () =>{
+        try {
+            // Preparar los datos para actualizar la instalación
+            const datosActualizacion = {
+              folio: infoCompleta.value[0]?.folio,
+                calificacion: valorRating.value,
+                feedback: valorComentarios.value,
+            };
+
+            // Llamar a la API para actualizar la instalación
+            const response = await $fetch('/api/instalaciones/instalaciones', {
+                method: 'PUT',
+                body: datosActualizacion
+            }).then(respuesta=>{
+              console.log("Se enviaron los comentarios correctamente");
+            }).catch(error=>{
+              console.log("Hubo un error");
+            });
+        } catch (error) {
+            console.error("Error al actualizar la instalación:", error);
+            alert("Error al actualizar la instalación. Por favor intenta nuevamente.");
+        }
 }
 
 

@@ -8,8 +8,7 @@
                     <template #title>{{ solicitudActual.folio }}</template>
                     <template #content>
                         <p>Nombre: {{ solicitudActual.usuario.nombre }}</p>
-                        <p>Direccion: {{ solicitudActual.usuario.direccion.calle }} {{
-                            solicitudActual.usuario.direccion.numero }}</p>
+                        <p>Direccion: {{ solicitudActual.usuario.direccion.calle }} {{solicitudActual.usuario.direccion.numero }}</p>
                         <p>Ciudad: {{ solicitudActual.usuario.direccion.ciudad }}</p>
                         <p>Estado: {{ solicitudActual.usuario.direccion.estado }}</p>
 
@@ -26,8 +25,7 @@
                     <template #title>{{ solicitudActual.folio }}</template>
                     <template #content>
                         <p>Nombre: {{ solicitudActual.usuario.nombre }}</p>
-                        <p>Direccion: {{ solicitudActual.usuario.direccion.calle }} {{
-                            solicitudActual.usuario.direccion.numero }}</p>
+                        <p>Direccion: {{ solicitudActual.usuario.direccion.calle }} {{solicitudActual.usuario.direccion.numero }}</p>
                         <p>Ciudad: {{ solicitudActual.usuario.direccion.ciudad }}</p>
                         <p>Estado: {{ solicitudActual.usuario.direccion.estado }}</p>
 
@@ -35,6 +33,29 @@
                             @click="abrirDialogoProcesoInstalacion(solicitudActual)">Empezar Instalacion</Button>
                         <Button v-if="solicitudActual.statusAtual == 'Instalando'" label="Info" severity="info"
                             @click="abrirDialogoterminarInstalacion(solicitudActual)">Terminar Instalacion</Button>
+                    </template>
+                </Card>
+            </div>
+        </div>
+
+
+
+
+
+        <h2>Completados ({{ infoCompletaInstalacionCompletada.length }}) </h2>
+        <div class="grid-container">
+            <div v-for="solicitudActual in infoCompletaInstalacionCompletada" :key="solicitudActual.folio">
+                <Card>
+                    <template #title>{{ solicitudActual.folio }}</template>
+                    <template #content>
+                        <p>Nombre: {{ solicitudActual.usuario.nombre }}</p>
+                        <p>Direccion: {{ solicitudActual.usuario.direccion.calle }} {{solicitudActual.usuario.direccion.numero }}</p>
+                        <p>Ciudad: {{ solicitudActual.usuario.direccion.ciudad }}</p>
+                        <p>Estado: {{ solicitudActual.usuario.direccion.estado }}</p>
+                         <Form class="flex flex-col gap-1">
+                            <Rating v-model="solicitudActual.calificacion"  :readonly="true"/>
+                            <p>{{ solicitudActual.feedback??"Sin Comentarios" }}</p>
+                        </Form>
                     </template>
                 </Card>
             </div>
@@ -104,8 +125,10 @@ import type { Tecnico } from '~~/server/models/Tecnico';
 // variables reactivas
 const instalacionEncontrada = ref<Instalacion[]>([]);
 const instalacionesConfirmadas = ref<Instalacion[]>([])
+const instalacionesCompletadas = ref<Instalacion[]>([]);
 const infoCompletaInstalacion = ref<InstalacionCompleta[]>([]);
 const infoCompletaInstalacionConfirmada = ref<InstalacionCompleta[]>([]);
+const infoCompletaInstalacionCompletada = ref<InstalacionCompleta[]>([]);
 const infoTecnico = ref<Tecnico>();
 const mostrarDialogo = ref(false);
 const mostrarDialogoEmpezarInstalacion = ref(false);
@@ -159,6 +182,7 @@ const cargarDatos = async () => {
 
     instalacionEncontrada.value = listadoInstalaciones.filter(item => item.statusAtual === 'Solicitado');
     instalacionesConfirmadas.value = listadoInstalaciones.filter(item => item.statusAtual === 'Cita Confirmada' || item.statusAtual === 'Instalando');
+    instalacionesCompletadas.value = listadoInstalaciones.filter(item => item.statusAtual === 'Completado');
 
 
     const listadoStatus: Status[] = statusRes?.data ?? []
@@ -199,6 +223,27 @@ const cargarDatos = async () => {
             }
 
             infoCompletaInstalacionConfirmada.value.push(infoCompleta);
+
+        }
+    });
+
+
+
+
+    instalacionesCompletadas.value.forEach(item => {
+       
+
+        const usuarioActual = listadoUsuarios.find(u => u.folio === item.folio);
+        const statusActual = listadoStatus.find(s => s.descripcion === item.statusAtual);
+
+        if (usuarioActual && statusActual) {
+            const infoCompleta: InstalacionCompleta = {
+                ...item,
+                usuario: usuarioActual,
+                status: statusActual
+            }
+
+            infoCompletaInstalacionCompletada.value.push(infoCompleta);
 
         }
     });
@@ -279,6 +324,7 @@ const confirmarFecha = async () => {
                 // Recargar los datos para reflejar los cambios
                 infoCompletaInstalacion.value = [];
                 infoCompletaInstalacionConfirmada.value = [];
+                infoCompletaInstalacionCompletada.value = [];
                 await cargarDatos();
 
                 cerrarDialogo();
@@ -335,6 +381,7 @@ const empezarProcesoInstalacion = async ()=>{
                 // Recargar los datos para reflejar los cambios
                 infoCompletaInstalacion.value = [];
                 infoCompletaInstalacionConfirmada.value = [];
+                infoCompletaInstalacionCompletada.value = [];
                 await cargarDatos();
 
                 cerrarDialogoProcesoInstalacion();
@@ -393,6 +440,7 @@ const terminarInstalacion = async () => {
                 // Recargar los datos para reflejar los cambios
                 infoCompletaInstalacion.value = [];
                 infoCompletaInstalacionConfirmada.value = [];
+                infoCompletaInstalacionCompletada.value = [];
                 await cargarDatos();
 
                 cerrarDialogoTerminarInstalacion();
